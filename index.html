@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kwadwo AI - Voice, Search & Image Assistant</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        kwadwo: {
+                            50: '#fbf8ef',
+                            100: '#f5edd4',
+                            500: '#f59e0b', // Amber warmth
+                            600: '#d97706',
+                            glow: '#06b6d4', // Neon Cyan
+                            darkBg: '#090d16',
+                            cardBg: 'rgba(15, 23, 42, 0.75)'
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'spin-slow': 'spin 8s linear infinite'
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(6, 182, 212, 0.4), 0 0 30px rgba(245, 158, 11, 0.2)' },
+                            '50%': { boxShadow: '0 0 25px rgba(6, 182, 212, 0.8), 0 0 45px rgba(245, 158, 11, 0.5)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #090d16;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism scrollbar & UI effects */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glow-border {
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #06b6d4 0%, #38bdf8 40%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Speech visualizer waveform simulation */
+        .wave-bar {
+            width: 4px;
+            height: 12px;
+            background: #06b6d4;
+            border-radius: 99px;
+            display: inline-block;
+            transition: height 0.1s ease;
+        }
+
+        .typing-indicator span {
+            animation: blink 1.4s infinite fill-mode-both;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: .2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: .4s; }
+
+        @keyframes blink {
+            0% { opacity: .2; }
+            20% { opacity: 1; }
+            100% { opacity: .2; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Header Navigation -->
+    <header class="h-16 border-b border-slate-800/80 px-4 lg:px-8 flex items-center justify-between glass-panel z-30 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-cyan-500 to-blue-600 p-[2px]">
+                <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                    <i class="fa-solid font-bold text-amber-400 text-lg">K</i>
+                </div>
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                </span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-extrabold text-lg tracking-tight gradient-text">KWADWO AI</h1>
+                    <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">v2.5 Turbo</span>
+                </div>
+                <p class="text-xs text-slate-400 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Ultra Fast • Voice & Search & Image
+                </p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            <button id="nav-chat-btn" onclick="switchTab('chat')" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <i class="fa-solid fa-comments"></i>
+                <span class="hidden sm:inline">Voice & Chat</span>
+            </button>
+            <button id="nav-studio-btn" onclick="switchTab('studio')" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                <span class="hidden sm:inline">Image Studio</span>
+            </button>
+            <button id="nav-gallery-btn" onclick="switchTab('gallery')" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i class="fa-solid fa-images text-purple-400"></i>
+                <span class="hidden sm:inline">Gallery</span>
+                <span id="gallery-count-badge" class="bg-slate-800 text-cyan-400 text-[10px] px-1.5 py-0.2 rounded-full font-mono">0</span>
+            </button>
+        </nav>
+
+        <!-- Right Quick Controls -->
+        <div class="flex items-center gap-2">
+            <!-- Voice Speech Output Auto Toggle -->
+            <button id="voice-response-toggle" onclick="toggleAutoVoice()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-300 text-xs hover:border-amber-500/50 transition-all" title="Toggle Auto-Speak Answers">
+                <i id="voice-toggle-icon" class="fa-solid fa-volume-high text-amber-400"></i>
+                <span id="voice-toggle-label" class="hidden md:inline font-medium text-xs">Voice Output: ON</span>
+            </button>
+
+            <!-- Settings / Reset Button -->
+            <button onclick="clearChatHistory()" class="p-2 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 transition-all" title="Clear Chat History">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden relative flex flex-col md:flex-row">
+
+        <!-- TAB 1: VOICE & CHAT INTERACTION -->
+        <section id="tab-chat" class="w-full h-full flex flex-col flex-1 overflow-hidden relative">
+            
+            <!-- Quick Suggestion Pill Bar -->
+            <div class="px-4 py-2 border-b border-slate-800/50 bg-slate-950/40 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+                <span class="text-[11px] font-semibold text-amber-400/90 whitespace-nowrap flex items-center gap-1">
+                    <i class="fa-solid fa-bolt text-xs"></i> Quick Prompts:
+                </span>
+                <button onclick="sendQuickPrompt('Who is Kwadwo AI and what can you do?')" class="quick-pill px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-300 transition-all whitespace-nowrap">
+                    👋 Who is Kwadwo?
+                </button>
+                <button onclick="sendQuickPrompt('Search live news and latest developments in Artificial Intelligence')" class="quick-pill px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-300 transition-all whitespace-nowrap">
+                    🌐 Latest AI News
+                </button>
+                <button onclick="sendQuickPrompt('Generate a futuristic golden skyline of Accra Ghana in 2080')" class="quick-pill px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 hover:bg-amber-500/10 hover:border-amber-500/40 hover:text-amber-300 transition-all whitespace-nowrap">
+                    🎨 Futuristic Accra Image
+                </button>
+                <button onclick="sendQuickPrompt('Tell me a warm greeting or joke with Ghanaian warmth in English or Twi')" class="quick-pill px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-300 transition-all whitespace-nowrap">
+                    🇬🇭 Ghanaian Warmth & Humor
+                </button>
+                <button onclick="sendQuickPrompt('What are the top tech hubs in West Africa today?')" class="quick-pill px-3 py-1 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-500/40 hover:text-cyan-300 transition-all whitespace-nowrap">
+                    🚀 African Tech Hubs
+                </button>
+            </div>
+
+            <!-- Chat Stream / Message Feed -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+                <!-- Welcome Assistant Message -->
+                <div class="flex items-start gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-cyan-500 flex items-center justify-center font-bold text-slate-950 shrink-0 shadow-lg shadow-cyan-500/20">
+                        K
+                    </div>
+                    <div class="space-y-3 flex-1">
+                        <div class="glass-panel p-4 rounded-2xl rounded-tl-none border border-slate-800 text-slate-200 text-sm leading-relaxed space-y-2">
+                            <p class="font-semibold text-cyan-400 text-base">Akwaaba! I am Kwadwo ⚡</p>
+                            <p>I operate at super-fast speed to help you with anything. You can speak to me using your mic, ask me to search live info on the web, or ask me to generate images instantly!</p>
+                            <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80 text-xs text-slate-400">
+                                <span class="flex items-center gap-1 text-cyan-400"><i class="fa-solid fa-microphone"></i> Voice Enabled</span>
+                                <span>•</span>
+                                <span class="flex items-center gap-1 text-amber-400"><i class="fa-solid fa-globe"></i> Web Grounding</span>
+                                <span>•</span>
+                                <span class="flex items-center gap-1 text-purple-400"><i class="fa-solid fa-image"></i> Fast Diffusion</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speech Audio Visualizer Overlay Bar (Shown when Mic or Voice Audio is Active) -->
+            <div id="audio-visualizer-bar" class="hidden px-4 py-2 bg-slate-900/90 border-t border-cyan-500/30 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></div>
+                    <span id="visualizer-status" class="text-xs font-mono text-cyan-400 font-medium">Listening to your voice...</span>
+                </div>
+                <!-- Dynamic Waveform Canvas / Animated bars -->
+                <div class="flex items-center gap-1 h-6" id="waveform-bars">
+                    <div class="wave-bar animate-pulse h-3"></div>
+                    <div class="wave-bar animate-pulse h-5" style="animation-delay: 0.1s"></div>
+                    <div class="wave-bar animate-pulse h-2" style="animation-delay: 0.2s"></div>
+                    <div class="wave-bar animate-pulse h-6" style="animation-delay: 0.15s"></div>
+                    <div class="wave-bar animate-pulse h-4" style="animation-delay: 0.3s"></div>
+                    <div class="wave-bar animate-pulse h-2" style="animation-delay: 0.05s"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Prompt & Voice Input Control Bar -->
+            <div class="p-3 lg:p-4 border-t border-slate-800/80 glass-panel shrink-0">
+                <form id="chat-form" onsubmit="handleChatSubmit(event)" class="max-w-4xl mx-auto flex items-end gap-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-700/70 focus-within:border-cyan-500/70 transition-all">
+                    
+                    <!-- Mic Button -->
+                    <button type="button" id="mic-btn" onclick="toggleVoiceRecognition()" class="p-3.5 rounded-xl bg-slate-800 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all flex items-center justify-center shrink-0 border border-slate-700" title="Click to Speak">
+                        <i id="mic-icon" class="fa-solid fa-microphone text-lg"></i>
+                    </button>
+
+                    <!-- Text Area Input -->
+                    <div class="flex-1 relative">
+                        <textarea id="user-input" rows="1" placeholder="Talk or ask Kwadwo anything... (e.g., 'Search live weather in Accra' or 'Generate a futuristic car')" class="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 px-3 py-2.5 focus:outline-none resize-none max-h-32"></textarea>
+                    </div>
+
+                    <!-- Web Search Toggle Mode Button -->
+                    <button type="button" id="search-mode-toggle" onclick="toggleSearchMode()" class="p-3 rounded-xl bg-slate-800/80 text-amber-400 border border-slate-700 hover:bg-amber-500/10 text-xs font-semibold flex items-center gap-1.5 transition-all" title="Toggle Live Web Search Mode">
+                        <i class="fa-solid fa-globe"></i>
+                        <span class="hidden sm:inline">Web Search</span>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button type="submit" id="send-btn" class="p-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold hover:opacity-90 transition-all shrink-0 flex items-center justify-center shadow-md shadow-cyan-500/20">
+                        <i class="fa-solid fa-paper-plane text-base"></i>
+                    </button>
+                </form>
+                <div class="flex items-center justify-between text-[11px] text-slate-500 px-3 mt-2">
+                    <span id="speech-recognition-status" class="flex items-center gap-1">
+                        <i class="fa-solid fa-circle text-[8px] text-emerald-400"></i> Mic Ready
+                    </span>
+                    <span>Powered by Kwadwo Neural AI • Fast Voice & Search Integration</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: FAST IMAGE GENERATION STUDIO -->
+        <section id="tab-studio" class="hidden w-full h-full flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- Studio Header Banner -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                            Kwadwo Fast Image Generator Studio
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Create high-quality AI images in seconds powered by rapid diffusion algorithms.</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-semibold">
+                        ⚡ Instant Render Speed
+                    </span>
+                </div>
+
+                <!-- Studio Form Controls -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-2">Detailed Visual Prompt</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="studio-prompt" placeholder="Describe the image you want to create (e.g. A vibrant Ghanaian Kente woven cyberpunk city at night with neon lights)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 transition-all">
+                            <button onclick="randomizePrompt()" class="p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-amber-400 transition-all" title="Inspire Me">
+                                <i class="fa-solid fa-dice text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Style Selector Presets -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-2">Artistic Style Preset</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2" id="style-presets-container">
+                            <button type="button" onclick="selectStyle('photorealistic', this)" class="style-btn active-style p-2 rounded-xl border border-cyan-500 bg-cyan-500/20 text-cyan-300 text-xs font-medium text-center transition-all">
+                                📸 Realistic
+                            </button>
+                            <button type="button" onclick="selectStyle('3d-render', this)" class="style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all">
+                                🎨 3D Render
+                            </button>
+                            <button type="button" onclick="selectStyle('cyberpunk', this)" class="style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all">
+                                🏙️ Cyberpunk
+                            </button>
+                            <button type="button" onclick="selectStyle('anime', this)" class="style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all">
+                                ⚔️ Anime
+                            </button>
+                            <button type="button" onclick="selectStyle('cinematic', this)" class="style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all">
+                                🎬 Cinematic
+                            </button>
+                            <button type="button" onclick="selectStyle('digital-art', this)" class="style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all">
+                                🖌️ Digital Painting
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aspect Ratio Selector -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-slate-400">Aspect Ratio:</span>
+                            <button onclick="setAspectRatio('1024x1024', this)" class="ratio-btn px-3 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500 text-cyan-300 text-xs font-mono">1:1 Square</button>
+                            <button onclick="setAspectRatio('1280x720', this)" class="ratio-btn px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono hover:text-white">16:9 Wide</button>
+                            <button onclick="setAspectRatio('720x1280', this)" class="ratio-btn px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono hover:text-white">9:16 Portrait</button>
+                        </div>
+
+                        <button onclick="generateStudioImage()" id="studio-gen-btn" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-cyan-500 text-slate-950 font-bold text-sm hover:opacity-95 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i>
+                            Generate Image Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Generated Studio Result Container -->
+                <div id="studio-result-card" class="hidden glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-slate-200">Generated Creation</h3>
+                        <span id="studio-timer" class="text-xs font-mono text-cyan-400">Render time: 1.8s</span>
+                    </div>
+
+                    <div class="relative group rounded-xl overflow-hidden bg-slate-950 min-h-[300px] flex items-center justify-center border border-slate-800">
+                        <img id="studio-image-preview" src="" alt="Generated AI Artwork" class="w-full h-auto max-h-[500px] object-contain transition-transform duration-500 group-hover:scale-[1.01]">
+                        <div id="studio-loading-spinner" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                            <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-xs font-mono text-cyan-400 animate-pulse">Kwadwo Neural Engine Rendering Image...</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 pt-2">
+                        <p id="studio-image-caption" class="text-xs text-slate-400 truncate flex-1 font-mono"></p>
+                        <div class="flex items-center gap-2">
+                            <button onclick="downloadStudioImage()" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold hover:bg-cyan-500/20 hover:text-cyan-300 transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-download"></i> Download HD
+                            </button>
+                            <button onclick="sendImageToChat()" class="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/30 transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-share"></i> Share in Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: GENERATED GALLERY -->
+        <section id="tab-gallery" class="hidden w-full h-full flex-1 overflow-y-auto p-4 lg:p-8 space-y-6">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-images text-purple-400"></i>
+                            Your Image Gallery
+                        </h2>
+                        <p class="text-xs text-slate-400">All images generated during your session with Kwadwo AI.</p>
+                    </div>
+                </div>
+
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Gallery Cards appended here -->
+                </div>
+
+                <div id="gallery-empty-state" class="text-center py-16 glass-panel rounded-2xl border border-slate-800 space-y-3">
+                    <i class="fa-solid fa-image text-4xl text-slate-600"></i>
+                    <p class="text-slate-400 text-sm">No images generated yet.</p>
+                    <button onclick="switchTab('studio')" class="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-semibold">
+                        Go to Image Studio
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /* ==========================================================================
+           KWADWO AI ENGINE - CORE APPLICATION STATE & API CONFIGURATION
+           ========================================================================== */
+        
+        let autoVoiceOutput = true;
+        let isSearchMode = false;
+        let isRecording = false;
+        let speechRecognition = null;
+        let selectedStyle = 'photorealistic';
+        let currentAspectRatio = '1024x1024';
+        let galleryImages = [];
+        let currentStudioImageUrl = '';
+        let currentStudioPrompt = '';
+
+        // Gemini API Config
+        const apiKey = "";
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        // System instruction for Kwadwo AI
+        const kwadwoSystemInstruction = `
+You are Kwadwo, a super-fast, intelligent, and incredibly warm AI assistant with a distinct Ghanaian warmth and high-energy personality.
+Core traits:
+1. Speak with enthusiasm, clarity, speed, and helpfulness.
+2. Use occasional warm Ghanaian greetings or phrases (e.g., 'Akwaaba!', 'Chale!', 'No worries at all!', 'Everything sorted!') when appropriate, but keep answers clear and direct in English.
+3. You excel at real-time search summarization, image prompt generation, and answering questions.
+4. If a user asks you to create/draw/generate an image, inform them enthusiastically that Kwadwo is generating the image for them immediately.
+`;
+
+        /* ==========================================================================
+           TAB SWITCHING NAVIGATION LOGIC
+           ========================================================================== */
+        function switchTab(tabName) {
+            const tabs = ['chat', 'studio', 'gallery'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`nav-${t}-btn`);
+                if (t === tabName) {
+                    el.classList.remove('hidden');
+                    btn.className = 'tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = 'tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/50';
+                }
+            });
+        }
+
+        /* ==========================================================================
+           SPEECH RECOGNITION (VOICE INPUT) SYSTEM
+           ========================================================================== */
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('speech-recognition-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Mic Browser API Unsupported';
+                return;
+            }
+
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.continuous = false;
+            speechRecognition.interimResults = true;
+            speechRecognition.lang = 'en-US';
+
+            speechRecognition.onstart = () => {
+                isRecording = true;
+                updateMicUI(true);
+            };
+
+            speechRecognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('user-input').value = transcript;
+            };
+
+            speechRecognition.onerror = (event) => {
+                console.error("Speech Recognition Error:", event.error);
+                isRecording = false;
+                updateMicUI(false);
+            };
+
+            speechRecognition.onend = () => {
+                isRecording = false;
+                updateMicUI(false);
+                const inputVal = document.getElementById('user-input').value.trim();
+                if (inputVal.length > 2) {
+                    handleChatSubmit();
+                }
+            };
+        }
+
+        function toggleVoiceRecognition() {
+            if (!speechRecognition) {
+                alert("Web Speech Recognition is not supported by your browser. Please use Google Chrome, Edge, or Safari.");
+                return;
+            }
+
+            if (isRecording) {
+                speechRecognition.stop();
+            } else {
+                try {
+                    speechRecognition.start();
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        function updateMicUI(recording) {
+            const micBtn = document.getElementById('mic-btn');
+            const micIcon = document.getElementById('mic-icon');
+            const visualizerBar = document.getElementById('audio-visualizer-bar');
+
+            if (recording) {
+                micBtn.className = "p-3.5 rounded-xl bg-rose-500 text-white animate-pulse transition-all flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/40";
+                micIcon.className = "fa-solid fa-microphone-lines text-lg";
+                visualizerBar.classList.remove('hidden');
+                document.getElementById('visualizer-status').innerText = "Listening to Kwadwo's user...";
+            } else {
+                micBtn.className = "p-3.5 rounded-xl bg-slate-800 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all flex items-center justify-center shrink-0 border border-slate-700";
+                micIcon.className = "fa-solid fa-microphone text-lg";
+                visualizerBar.classList.add('hidden');
+            }
+        }
+
+        /* ==========================================================================
+           SPEECH SYNTHESIS (VOICE OUTPUT RESPONSE)
+           ========================================================================== */
+        function toggleAutoVoice() {
+            autoVoiceOutput = !autoVoiceOutput;
+            const btnIcon = document.getElementById('voice-toggle-icon');
+            const btnLabel = document.getElementById('voice-toggle-label');
+
+            if (autoVoiceOutput) {
+                btnIcon.className = "fa-solid fa-volume-high text-amber-400";
+                btnLabel.innerText = "Voice Output: ON";
+            } else {
+                btnIcon.className = "fa-solid fa-volume-xmark text-slate-500";
+                btnLabel.innerText = "Voice Output: OFF";
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function speakText(text) {
+            if (!autoVoiceOutput || !('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel(); // stop previous speech
+
+            // Strip out markdown symbols for smooth audio reading
+            const cleanText = text.replace(/[*_#`~\[\]()]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 1.05; // Energetic speed
+            utterance.pitch = 1.0;
+
+            // Select natural voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Male')));
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            // Show audio bar while speaking
+            const visualizerBar = document.getElementById('audio-visualizer-bar');
+            visualizerBar.classList.remove('hidden');
+            document.getElementById('visualizer-status').innerText = "Kwadwo is speaking...";
+
+            utterance.onend = () => {
+                visualizerBar.classList.add('hidden');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /* ==========================================================================
+           CHAT & GEMINI API PROCESSING ENGINE
+           ========================================================================== */
+        function toggleSearchMode() {
+            isSearchMode = !isSearchMode;
+            const btn = document.getElementById('search-mode-toggle');
+            if (isSearchMode) {
+                btn.className = "p-3 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/50 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/10";
+            } else {
+                btn.className = "p-3 rounded-xl bg-slate-800/80 text-amber-400 border border-slate-700 hover:bg-amber-500/10 text-xs font-semibold flex items-center gap-1.5 transition-all";
+            }
+        }
+
+        function sendQuickPrompt(promptText) {
+            document.getElementById('user-input').value = promptText;
+            handleChatSubmit();
+        }
+
+        async function handleChatSubmit(event) {
+            if (event) event.preventDefault();
+
+            const inputEl = document.getElementById('user-input');
+            const userText = inputEl.value.trim();
+            if (!userText) return;
+
+            // Clear input field
+            inputEl.value = '';
+
+            // Render User Message
+            appendUserMessage(userText);
+
+            // Check if user is requesting image generation directly in chat
+            const lowerText = userText.toLowerCase();
+            const isImageIntent = lowerText.includes('generate image') || lowerText.includes('draw') || lowerText.includes('create an image') || lowerText.includes('picture of') || lowerText.includes('paint');
+
+            if (isImageIntent) {
+                handleDirectChatImageGen(userText);
+                return;
+            }
+
+            // Create Assistant Message Shell with typing indicator
+            const assistantMsgId = 'msg-' + Date.now();
+            appendAssistantSkeleton(assistantMsgId);
+
+            try {
+                // Determine payload with Search Grounding if enabled or intent demands live data
+                const useSearch = isSearchMode || lowerText.includes('news') || lowerText.includes('search') || lowerText.includes('weather') || lowerText.includes('score') || lowerText.includes('latest');
+
+                const payload = {
+                    contents: [{ parts: [{ text: userText }] }],
+                    systemInstruction: { parts: [{ text: kwadwoSystemInstruction }] }
+                };
+
+                if (useSearch) {
+                    payload.tools = [{ "google_search": {} }];
+                }
+
+                const response = await fetch(geminiApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const responseText = candidate.content.parts[0].text;
+
+                    // Extract search grounding sources if present
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+                            .filter(s => s.uri && s.title);
+                    }
+
+                    // Render Response with typewriter effect
+                    updateAssistantMessage(assistantMsgId, responseText, sources);
+                    speakText(responseText);
+                } else {
+                    updateAssistantMessage(assistantMsgId, "Charlie, I encountered a minor signal glitch! Let me assist you again in a second.");
+                }
+
+            } catch (err) {
+                console.error("Kwadwo AI Chat Error:", err);
+                updateAssistantMessage(assistantMsgId, "I'm having trouble connecting to the network right now. Please check your connection and try again!");
+            }
+        }
+
+        /* ==========================================================================
+           CHAT MESSAGE RENDERING HELPER FUNCTIONS
+           ========================================================================== */
+        function appendUserMessage(text) {
+            const container = document.getElementById('chat-messages-container');
+            const div = document.createElement('div');
+            div.className = "flex items-start justify-end gap-3 max-w-3xl ml-auto";
+            div.innerHTML = `
+                <div class="glass-panel bg-cyan-500/10 border-cyan-500/30 p-4 rounded-2xl rounded-tr-none text-slate-100 text-sm leading-relaxed">
+                    ${escapeHtml(text)}
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-cyan-400 shrink-0">
+                    <i class="fa-solid fa-user text-xs"></i>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendAssistantSkeleton(msgId) {
+            const container = document.getElementById('chat-messages-container');
+            const div = document.createElement('div');
+            div.className = "flex items-start gap-3 max-w-3xl";
+            div.id = msgId;
+            div.innerHTML = `
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-cyan-500 flex items-center justify-center font-bold text-slate-950 shrink-0 shadow-lg shadow-cyan-500/20">
+                    K
+                </div>
+                <div class="space-y-3 flex-1">
+                    <div class="glass-panel p-4 rounded-2xl rounded-tl-none border border-slate-800 text-slate-200 text-sm leading-relaxed msg-content">
+                        <div class="typing-indicator flex items-center gap-1 text-cyan-400">
+                            <span class="text-lg">•</span><span class="text-lg">•</span><span class="text-lg">•</span>
+                            <span class="text-xs font-mono text-slate-400 ml-2">Kwadwo thinking fast...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        function updateAssistantMessage(msgId, text, sources = []) {
+            const msgEl = document.getElementById(msgId);
+            if (!msgEl) return;
+
+            const contentDiv = msgEl.querySelector('.msg-content');
+            
+            // Format markdown bold & line breaks
+            let formattedText = escapeHtml(text)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            let sourcesHtml = '';
+            if (sources.length > 0) {
+                sourcesHtml = `
+                    <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-1.5">
+                        <span class="text-[11px] font-semibold text-amber-400 flex items-center gap-1">
+                            <i class="fa-solid fa-globe text-xs"></i> Web Sources:
+                        </span>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${sources.map(s => `
+                                <a href="${s.uri}" target="_blank" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-cyan-400 hover:border-cyan-500/50 truncate max-w-[200px] inline-block">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> ${escapeHtml(s.title)}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            contentDiv.innerHTML = formattedText + sourcesHtml;
+            scrollToBottom();
+        }
+
+        /* ==========================================================================
+           FAST IMAGE GENERATION ENGINE (POLLINATIONS / UNSPLASH FALLBACK)
+           ========================================================================== */
+        async function handleDirectChatImageGen(userPrompt) {
+            const assistantMsgId = 'msg-' + Date.now();
+            appendAssistantSkeleton(assistantMsgId);
+
+            const msgEl = document.getElementById(assistantMsgId);
+            const contentDiv = msgEl.querySelector('.msg-content');
+
+            contentDiv.innerHTML = `
+                <p class="text-cyan-400 font-semibold mb-2">⚡ Creating your image with Kwadwo Fast Diffusion...</p>
+                <div class="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 p-2 min-h-[220px] flex flex-col items-center justify-center">
+                    <div class="w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <span class="text-xs font-mono text-slate-400">Rendering high resolution visual...</span>
+                </div>
+            `;
+
+            // Clean prompt
+            const cleanPrompt = encodeURIComponent(userPrompt.replace(/generate image|draw|create an image|picture of/gi, '').trim());
+            const imageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1024&height=1024&seed=${Math.floor(Math.random() * 999999)}&nologo=true`;
+
+            // Preload Image
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = () => {
+                contentDiv.innerHTML = `
+                    <p class="mb-2">Here is what I created for you, Chale! 🎨</p>
+                    <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
+                        <img src="${imageUrl}" alt="${escapeHtml(userPrompt)}" class="w-full h-auto max-h-[400px] object-cover">
+                        <div class="p-3 bg-slate-900/90 flex items-center justify-between border-t border-slate-800">
+                            <span class="text-xs text-slate-400 truncate max-w-[70%] font-mono">${escapeHtml(userPrompt)}</span>
+                            <a href="${imageUrl}" download="Kwadwo-AI-Art.jpg" target="_blank" class="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/30">
+                                <i class="fa-solid fa-download"></i> Save
+                            </a>
+                        </div>
+                    </div>
+                `;
+                addToGallery(imageUrl, userPrompt);
+                speakText("I have generated the image for you right here!");
+                scrollToBottom();
+            };
+
+            img.onerror = () => {
+                contentDiv.innerHTML = `<p class="text-rose-400">Image generation service timed out. Please try a simpler prompt!</p>`;
+            };
+        }
+
+        /* STUDIO TAB SPECIFIC IMAGE GENERATION */
+        function selectStyle(styleKey, btn) {
+            selectedStyle = styleKey;
+            document.querySelectorAll('.style-btn').forEach(b => {
+                b.className = "style-btn p-2 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-300 text-xs font-medium text-center hover:border-slate-600 transition-all";
+            });
+            btn.className = "style-btn active-style p-2 rounded-xl border border-cyan-500 bg-cyan-500/20 text-cyan-300 text-xs font-medium text-center transition-all";
+        }
+
+        function setAspectRatio(ratio, btn) {
+            currentAspectRatio = ratio;
+            document.querySelectorAll('.ratio-btn').forEach(b => {
+                b.className = "ratio-btn px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono hover:text-white";
+            });
+            btn.className = "ratio-btn px-3 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500 text-cyan-300 text-xs font-mono";
+        }
+
+        function randomizePrompt() {
+            const prompts = [
+                "Futuristic solar-powered smart city in Kumasi with lush traditional garden towers",
+                "A regal Ashanti queen wearing intricate glowing neon cybernetic Kente armor",
+                "A dramatic cinematic photo of a high speed bullet train zooming past West African coastal palm trees",
+                "3D isometric render of a modern AI developer workspace with glowing neon cyan monitors",
+                "A majestic lion wearing a golden crown standing on top of a futuristic skyscraper at sunset"
+            ];
+            const p = prompts[Math.floor(Math.random() * prompts.length)];
+            document.getElementById('studio-prompt').value = p;
+        }
+
+        async function generateStudioImage() {
+            const promptInput = document.getElementById('studio-prompt').value.trim();
+            if (!promptInput) {
+                alert("Please enter a prompt description first!");
+                return;
+            }
+
+            const startTime = Date.now();
+            const resultCard = document.getElementById('studio-result-card');
+            const imgPreview = document.getElementById('studio-image-preview');
+            const spinner = document.getElementById('studio-loading-spinner');
+            const caption = document.getElementById('studio-image-caption');
+            const timer = document.getElementById('studio-timer');
+
+            resultCard.classList.remove('hidden');
+            spinner.classList.remove('hidden');
+            imgPreview.classList.add('opacity-30');
+
+            const fullPrompt = `${promptInput}, style of ${selectedStyle}, highly detailed, 8k resolution`;
+            const [width, height] = currentAspectRatio.split('x');
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${width}&height=${height}&seed=${Math.floor(Math.random() * 999999)}&nologo=true`;
+
+            currentStudioImageUrl = imageUrl;
+            currentStudioPrompt = promptInput;
+
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = () => {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                imgPreview.src = imageUrl;
+                imgPreview.classList.remove('opacity-30');
+                spinner.classList.add('hidden');
+                caption.innerText = `Prompt: "${promptInput}" (${selectedStyle})`;
+                timer.innerText = `Render time: ${duration}s`;
+
+                addToGallery(imageUrl, promptInput);
+            };
+
+            img.onerror = () => {
+                spinner.classList.add('hidden');
+                alert("Failed to render image. Please try again.");
+            };
+        }
+
+        function downloadStudioImage() {
+            if (!currentStudioImageUrl) return;
+            window.open(currentStudioImageUrl, '_blank');
+        }
+
+        function sendImageToChat() {
+            if (!currentStudioImageUrl) return;
+            switchTab('chat');
+            appendUserMessage(`Generated artwork for: "${currentStudioPrompt}"`);
+            
+            const assistantMsgId = 'msg-' + Date.now();
+            appendAssistantSkeleton(assistantMsgId);
+            
+            setTimeout(() => {
+                const msgEl = document.getElementById(assistantMsgId);
+                const contentDiv = msgEl.querySelector('.msg-content');
+                contentDiv.innerHTML = `
+                    <p class="mb-2">Here is the image shared from your Studio creation: 🎨</p>
+                    <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
+                        <img src="${currentStudioImageUrl}" class="w-full h-auto max-h-[400px] object-cover">
+                    </div>
+                `;
+                scrollToBottom();
+            }, 300);
+        }
+
+        /* ==========================================================================
+           GALLERY MANAGEMENT
+           ========================================================================== */
+        function addToGallery(url, prompt) {
+            galleryImages.unshift({ id: Date.now(), url, prompt });
+            updateGalleryUI();
+        }
+
+        function updateGalleryUI() {
+            const grid = document.getElementById('gallery-grid');
+            const emptyState = document.getElementById('gallery-empty-state');
+            const countBadge = document.getElementById('gallery-count-badge');
+
+            countBadge.innerText = galleryImages.length;
+
+            if (galleryImages.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.innerHTML = '';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = galleryImages.map(item => `
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 group hover:border-cyan-500/40 transition-all">
+                    <div class="relative aspect-square overflow-hidden bg-slate-950">
+                        <img src="${item.url}" alt="${escapeHtml(item.prompt)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    </div>
+                    <div class="p-3 bg-slate-900/90 flex items-center justify-between gap-2 border-t border-slate-800">
+                        <p class="text-xs text-slate-300 truncate font-mono">${escapeHtml(item.prompt)}</p>
+                        <a href="${item.url}" target="_blank" class="p-1.5 rounded-lg bg-slate-800 text-cyan-400 hover:bg-cyan-500/20 text-xs">
+                            <i class="fa-solid fa-arrow-down-long"></i>
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* ==========================================================================
+           UTILITY FUNCTIONS
+           ========================================================================== */
+        function scrollToBottom() {
+            const container = document.getElementById('chat-messages-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function clearChatHistory() {
+            if (confirm("Clear all chat messages?")) {
+                const container = document.getElementById('chat-messages-container');
+                container.innerHTML = `
+                    <div class="flex items-start gap-3 max-w-3xl">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-cyan-500 flex items-center justify-center font-bold text-slate-950 shrink-0 shadow-lg shadow-cyan-500/20">
+                            K
+                        </div>
+                        <div class="space-y-3 flex-1">
+                            <div class="glass-panel p-4 rounded-2xl rounded-tl-none border border-slate-800 text-slate-200 text-sm leading-relaxed space-y-2">
+                                <p class="font-semibold text-cyan-400 text-base">Chat History Cleared! ⚡</p>
+                                <p>How can Kwadwo help you next?</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize Speech Recognition on page load
+        window.onload = () => {
+            initSpeechRecognition();
+        };
+    </script>
+</body>
+</html>
